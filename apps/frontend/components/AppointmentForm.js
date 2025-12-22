@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useDoctor } from '../context/DoctorContext';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// Use Netlify Functions (serverless) for faster response
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/.netlify/functions';
 
 export default function AppointmentForm({ onSuccess }) {
   const { selectedDoctor, selectDoctor } = useDoctor();
@@ -26,7 +27,7 @@ export default function AppointmentForm({ onSuccess }) {
 
   const fetchDoctors = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/doctors`);
+      const response = await axios.get(`${API_URL}/get-doctors`);
       // Filter to show only Dr. Karthik
       const karthikOnly = response.data.filter(doc => doc.name.includes('Karthik'));
       setDoctors(karthikOnly);
@@ -99,10 +100,10 @@ export default function AppointmentForm({ onSuccess }) {
         }
       };
 
-      console.log('Booking appointment to:', `${API_URL}/api/appointments`);
+      console.log('Booking appointment to:', `${API_URL}/book-appointment`);
       
-      const response = await axios.post(`${API_URL}/api/appointments`, appointmentData, {
-        timeout: 60000, // 60 second timeout (Render free tier can take time to wake up)
+      const response = await axios.post(`${API_URL}/book-appointment`, appointmentData, {
+        timeout: 30000, // 30 seconds - Netlify functions are much faster
         headers: {
           'Content-Type': 'application/json'
         }
