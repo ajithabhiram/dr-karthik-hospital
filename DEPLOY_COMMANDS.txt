@@ -1,0 +1,68 @@
+=================================================================
+DEPLOYMENT COMMANDS - COPY & PASTE
+=================================================================
+
+STEP 1: PUSH TO GITHUB
+-----------------------------------------------------------------
+cd ruth
+git init
+git add .
+git commit -m "Initial commit - Ready for deployment"
+git remote add origin https://github.com/abhiramdumpala2104-cmd/ruth.git
+git branch -M main
+git push -u origin main
+
+
+STEP 2: RENDER BACKEND ENVIRONMENT VARIABLES
+-----------------------------------------------------------------
+Copy these to Render.com when deploying backend:
+
+SUPABASE_URL=https://scgrqhqqlzwxzacdypww.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjZ3JxaHFxbHp3eHphY2R5cHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjA5MTMsImV4cCI6MjA4MTA5NjkxM30.MNoW4SQ6EOcVvr1Ab3UnUy1efMxYUjdxDSsvi5BAOE0
+EMAIL_USER=ruthvikhospitals@gmail.com
+EMAIL_PASS=vicl inni zqge xfaz
+PORT=10000
+
+
+STEP 3: NETLIFY FRONTEND ENVIRONMENT VARIABLES
+-----------------------------------------------------------------
+Copy these to Netlify when deploying frontend:
+
+NEXT_PUBLIC_SUPABASE_URL=https://scgrqhqqlzwxzacdypww.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNjZ3JxaHFxbHp3eHphY2R5cHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjA5MTMsImV4cCI6MjA4MTA5NjkxM30.MNoW4SQ6EOcVvr1Ab3UnUy1efMxYUjdxDSsvi5BAOE0
+NEXT_PUBLIC_API_URL=[PASTE_YOUR_BACKEND_URL_HERE]
+
+⚠️ Replace [PASTE_YOUR_BACKEND_URL_HERE] with actual backend URL from Render!
+
+
+=================================================================
+RENDER CONFIGURATION
+=================================================================
+
+Name: ruthvik-backend
+Region: Singapore
+Root Directory: ruth/apps/backend
+Build Command: npm install
+Start Command: npm start
+Instance Type: Free
+
+
+=================================================================
+NETLIFY CONFIGURATION
+=================================================================
+
+Base directory: ruth/apps/frontend
+Build command: npm run build
+Publish directory: .next
+Branch: main
+
+
+=================================================================
+ADMIN CREDENTIALS
+=================================================================
+
+Admin URL: your-website.com/admin/media-upload
+Password: karthik@ruthvik
+
+
+=================================================================
