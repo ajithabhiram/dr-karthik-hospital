@@ -3,7 +3,7 @@
   
   <!-- Homepage -->
   <url>
-    <loc>https://your-site.netlify.app/</loc>
+    <loc>https://karthikpaidi.netlify.app/</loc>
     <lastmod>2024-12-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
@@ -11,7 +11,7 @@
   
   <!-- About Page -->
   <url>
-    <loc>https://your-site.netlify.app/about</loc>
+    <loc>https://karthikpaidi.netlify.app/about</loc>
     <lastmod>2024-12-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -19,7 +19,7 @@
   
   <!-- Services Page -->
   <url>
-    <loc>https://your-site.netlify.app/services</loc>
+    <loc>https://karthikpaidi.netlify.app/services</loc>
     <lastmod>2024-12-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -27,7 +27,7 @@
   
   <!-- Doctors Page -->
   <url>
-    <loc>https://your-site.netlify.app/doctors</loc>
+    <loc>https://karthikpaidi.netlify.app/doctors</loc>
     <lastmod>2024-12-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -35,7 +35,7 @@
   
   <!-- Contact Page -->
   <url>
-    <loc>https://your-site.netlify.app/contact</loc>
+    <loc>https://karthikpaidi.netlify.app/contact</loc>
     <lastmod>2024-12-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -43,7 +43,7 @@
   
   <!-- Appointment Page -->
   <url>
-    <loc>https://your-site.netlify.app/make-appointment</loc>
+    <loc>https://karthikpaidi.netlify.app/make-appointment</loc>
     <lastmod>2024-12-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -51,7 +51,7 @@
   
   <!-- Photo Gallery -->
   <url>
-    <loc>https://your-site.netlify.app/gallery/photos</loc>
+    <loc>https://karthikpaidi.netlify.app/gallery/photos</loc>
     <lastmod>2024-12-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -59,7 +59,7 @@
   
   <!-- Video Gallery -->
   <url>
-    <loc>https://your-site.netlify.app/gallery/videos</loc>
+    <loc>https://karthikpaidi.netlify.app/gallery/videos</loc>
     <lastmod>2024-12-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
