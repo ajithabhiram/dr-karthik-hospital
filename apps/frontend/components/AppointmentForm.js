@@ -62,6 +62,12 @@ export default function AppointmentForm({ onSuccess }) {
     e.preventDefault();
     setError('');
 
+    // Check if API_URL is configured
+    if (!API_URL) {
+      setError('Backend API URL is not configured. Please contact support.');
+      return;
+    }
+
     // Get the selected doctor from form or context
     const doctorId = formData.selectedDoctorId || selectedDoctor?.doctorId;
     if (!doctorId) {
@@ -93,7 +99,16 @@ export default function AppointmentForm({ onSuccess }) {
         }
       };
 
-      await axios.post(`${API_URL}/api/appointments`, appointmentData);
+      console.log('Booking appointment to:', `${API_URL}/api/appointments`);
+      
+      const response = await axios.post(`${API_URL}/api/appointments`, appointmentData, {
+        timeout: 60000, // 60 second timeout (Render free tier can take time to wake up)
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Appointment booked successfully:', response.data);
       
       if (onSuccess) onSuccess();
       
@@ -108,7 +123,17 @@ export default function AppointmentForm({ onSuccess }) {
         reasonForVisit: ''
       });
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to book appointment');
+      console.error('Appointment booking error:', err);
+      
+      if (err.code === 'ECONNABORTED') {
+        setError('Request timeout. The server is taking too long to respond. Please try again.');
+      } else if (err.response) {
+        setError(err.response?.data?.error || `Server error: ${err.response.status}`);
+      } else if (err.request) {
+        setError('Cannot reach the server. Please check your internet connection or try again later.');
+      } else {
+        setError('Failed to book appointment. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -322,12 +347,15 @@ export default function AppointmentForm({ onSuccess }) {
           className="w-full btn-primary text-lg md:text-xl py-3 md:py-4 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-xl font-bold"
         >
           {loading ? (
-            <span className="flex items-center justify-center gap-2 md:gap-3">
-              <svg className="animate-spin h-5 w-5 md:h-6 md:w-6" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span className="text-sm md:text-base">Booking Your Appointment...</span>
+            <span className="flex flex-col items-center justify-center gap-2">
+              <span className="flex items-center gap-2 md:gap-3">
+                <svg className="animate-spin h-5 w-5 md:h-6 md:w-6" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-sm md:text-base">Booking Your Appointment...</span>
+              </span>
+              <span className="text-xs opacity-75">Please wait, this may take up to 60 seconds...</span>
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2 md:gap-3">
