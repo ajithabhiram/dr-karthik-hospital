@@ -20,6 +20,14 @@ export default function AppointmentForm({ onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Fallback doctor data in case API fails
+  const fallbackDoctor = {
+    id: 'karthik-paidi',
+    name: 'Dr. Karthik Paidi',
+    specialty: 'Consultant Orthopaedic, Arthroscopic and Replacement Surgeon',
+    phone: '+917386361609'
+  };
+
   // Fetch doctors on component mount
   useEffect(() => {
     fetchDoctors();
@@ -28,9 +36,17 @@ export default function AppointmentForm({ onSuccess }) {
   const fetchDoctors = async () => {
     try {
       const response = await axios.get(`${API_URL}/get-doctors`);
-      // Filter to show only Dr. Karthik
-      const karthikOnly = response.data.filter(doc => doc.name.includes('Karthik'));
-      setDoctors(karthikOnly);
+      console.log('Doctors fetched:', response.data);
+      
+      if (response.data && response.data.length > 0) {
+        // Filter to show only Dr. Karthik
+        const karthikOnly = response.data.filter(doc => doc.name.includes('Karthik'));
+        setDoctors(karthikOnly.length > 0 ? karthikOnly : [fallbackDoctor]);
+      } else {
+        // Use fallback if no doctors found
+        console.log('No doctors found, using fallback');
+        setDoctors([fallbackDoctor]);
+      }
       
       // If a doctor is already selected from context, set it in form
       if (selectedDoctor) {
@@ -38,6 +54,8 @@ export default function AppointmentForm({ onSuccess }) {
       }
     } catch (err) {
       console.error('Failed to fetch doctors:', err);
+      // Use fallback doctor on error
+      setDoctors([fallbackDoctor]);
     }
   };
 

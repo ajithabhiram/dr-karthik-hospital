@@ -6,6 +6,8 @@ const supabase = createClient(
 );
 
 exports.handler = async (event, context) => {
+  console.log('get-doctors function called');
+  
   // Only allow GET
   if (event.httpMethod !== 'GET') {
     return {
@@ -15,6 +17,10 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Fetching doctors from Supabase...');
+    console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Set' : 'Not set');
+    console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'Set' : 'Not set');
+    
     const { data, error } = await supabase
       .from('doctors')
       .select('*')
@@ -24,6 +30,8 @@ exports.handler = async (event, context) => {
       console.error('Supabase error:', error);
       throw error;
     }
+
+    console.log('Doctors fetched:', data ? data.length : 0);
 
     return {
       statusCode: 200,
@@ -37,7 +45,7 @@ exports.handler = async (event, context) => {
     console.error('Function error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to fetch doctors' })
+      body: JSON.stringify({ error: 'Failed to fetch doctors', details: error.message })
     };
   }
 };
