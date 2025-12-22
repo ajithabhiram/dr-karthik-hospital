@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Layout from '../components/Layout';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = '/api';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -26,7 +26,7 @@ export default function Contact() {
     setError('');
 
     try {
-      await axios.post(`${API_URL}/api/contact`, formData);
+      await axios.post(`${API_URL}/contact`, formData);
       setSuccess(true);
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
       setTimeout(() => setSuccess(false), 5000);

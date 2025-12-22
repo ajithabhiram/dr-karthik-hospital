@@ -1,29 +1,22 @@
-const { createClient } = require('@supabase/supabase-js');
-const nodemailer = require('nodemailer');
+import { createClient } from '@supabase/supabase-js';
+import nodemailer from 'nodemailer';
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-exports.handler = async (event, context) => {
-  // Only allow POST
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const body = JSON.parse(event.body);
+    const body = req.body;
     
     // Validate required fields
     if (!body.fullName || !body.phone || !body.approachingDoctor) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields' })
-      };
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
     // Insert appointment into Supabase
@@ -83,22 +76,12 @@ exports.handler = async (event, context) => {
       // Don't fail the request if email fails
     }
 
-    return {
-      statusCode: 201,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({
-        message: 'Appointment booked successfully',
-        appointment: data
-      })
-    };
+    return res.status(201).json({
+      message: 'Appointment booked successfully',
+      appointment: data
+    });
   } catch (error) {
-    console.error('Function error:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to book appointment' })
-    };
+    console.error('API error:', error);
+    return res.status(500).json({ error: 'Failed to book appointment' });
   }
-};
+}

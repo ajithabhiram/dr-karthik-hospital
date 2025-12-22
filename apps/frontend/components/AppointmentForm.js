@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useDoctor } from '../context/DoctorContext';
 import axios from 'axios';
 
-// Use Netlify Functions (serverless) for faster response
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/.netlify/functions';
+// Use Next.js API Routes (works perfectly with Netlify)
+const API_URL = '/api';
 
 export default function AppointmentForm({ onSuccess }) {
   const { selectedDoctor, selectDoctor } = useDoctor();
@@ -35,7 +35,7 @@ export default function AppointmentForm({ onSuccess }) {
 
   const fetchDoctors = async () => {
     try {
-      const response = await axios.get(`${API_URL}/get-doctors`);
+      const response = await axios.get(`${API_URL}/doctors`);
       console.log('Doctors fetched:', response.data);
       
       if (response.data && response.data.length > 0) {
@@ -118,10 +118,10 @@ export default function AppointmentForm({ onSuccess }) {
         }
       };
 
-      console.log('Booking appointment to:', `${API_URL}/book-appointment`);
+      console.log('Booking appointment to:', `${API_URL}/appointments`);
       
-      const response = await axios.post(`${API_URL}/book-appointment`, appointmentData, {
-        timeout: 30000, // 30 seconds - Netlify functions are much faster
+      const response = await axios.post(`${API_URL}/appointments`, appointmentData, {
+        timeout: 30000,
         headers: {
           'Content-Type': 'application/json'
         }
