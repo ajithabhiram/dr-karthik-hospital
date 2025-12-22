@@ -4,6 +4,9 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        {/* Google Search Console Verification */}
+        <meta name="google-site-verification" content="Q0gMkfB8DJOhCzzgqgYvNVGRXTvRSfMRd4V-v9XguK0" />
+        
         {/* Favicon */}
         <link rel="icon" href="/ruthvik.png" />
         <link rel="apple-touch-icon" href="/ruthvik.png" />
