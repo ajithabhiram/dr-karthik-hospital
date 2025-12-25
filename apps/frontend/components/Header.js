@@ -131,8 +131,9 @@ export default function Header() {
         </div>
 
         {/* Enhanced Mobile Menu with Animation - Scrollable */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 space-y-2 animate-fade-in border-t border-gray-200 pt-4 max-h-[calc(100vh-120px)] overflow-y-auto">
+        <div className={`lg:hidden mt-4 pb-4 space-y-2 border-t border-gray-200 pt-4 max-h-[calc(100vh-120px)] overflow-y-auto transition-all duration-300 ${
+          mobileMenuOpen ? 'block animate-fade-in' : 'hidden'
+        }`}>
             <Link 
               href="/" 
               className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-primary-50 hover:text-primary-600 rounded-lg transition-all font-semibold"
@@ -262,7 +263,6 @@ export default function Header() {
               </Link>
             </div>
           </div>
-        )}
       </nav>
     </header>
     </>

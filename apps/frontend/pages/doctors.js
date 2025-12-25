@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import DoctorCard from '../components/DoctorCard';
-import axios from 'axios';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { supabase } from '../lib/supabase';
 
 export default function Doctors() {
   const [doctors, setDoctors] = useState([]);
@@ -16,14 +14,20 @@ export default function Doctors() {
 
   const fetchDoctors = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/doctors`);
-      const doctorsData = response.data;
+      // Fetch directly from Supabase
+      const { data, error: supabaseError } = await supabase
+        .from('doctors')
+        .select('*')
+        .order('name');
+
+      if (supabaseError) throw supabaseError;
       
       // Filter to show only Dr. Karthik
-      const karthikOnly = doctorsData.filter(doc => doc.name.includes('Karthik'));
+      const karthikOnly = data.filter(doc => doc.name.includes('Karthik'));
       
       setDoctors(karthikOnly);
     } catch (err) {
+      console.error('Error fetching doctors:', err);
       setError('Failed to load doctors');
     } finally {
       setLoading(false);
