@@ -89,7 +89,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h3 className="font-bold text-xl mb-1">Advanced Fellowships</h3>
-                      <p className="text-gray-200">FIAS (Arthroscopy), FIJR (Joint Replacement), EASE Certified</p>
+                      <p className="text-gray-200">FIAS (Arthroscopy), FIJR (Joint Replacement)</p>
                     </div>
                   </div>
                 </div>
@@ -589,16 +589,16 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Emergency Notice */}
-              <div className="bg-gradient-to-r from-red-600 to-pink-600 text-white p-6 text-center">
+              {/* Contact Notice */}
+              <div className="bg-gradient-to-r from-primary-600 to-blue-600 text-white p-6 text-center">
                 <div className="flex items-center justify-center gap-3 mb-2">
-                  <svg className="w-8 h-8 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                   </svg>
-                  <h4 className="text-2xl font-bold">24/7 Emergency Services Available</h4>
+                  <h4 className="text-2xl font-bold">Need Assistance?</h4>
                 </div>
                 <p className="text-lg opacity-90">
-                  Call <a href="tel:+917386361609" className="font-bold underline hover:text-yellow-300">+91-73863-61609</a> for immediate assistance
+                  Call <a href="tel:+917386361609" className="font-bold underline hover:text-yellow-300">+91-73863-61609</a> for appointments and inquiries
                 </p>
               </div>
             </div>

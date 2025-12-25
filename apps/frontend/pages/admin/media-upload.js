@@ -291,22 +291,27 @@ export default function MediaUpload() {
     }
   };
 
-  const handleDelete = async (type, storagePath) => {
-    if (deleteConfirm === storagePath) {
+  const handleDelete = async (type, itemId, storagePath) => {
+    const confirmKey = `${type}-${itemId}`;
+    
+    if (deleteConfirm === confirmKey) {
       try {
         // Try Supabase first
-        try {
-          await deleteFromSupabase(storagePath);
-          console.log('Deleted from Supabase:', storagePath);
-        } catch (supabaseError) {
-          console.warn('Supabase delete failed, deleting from localStorage:', supabaseError);
-          
-          // Fallback to localStorage
+        if (storagePath && !storagePath.startsWith('local-')) {
+          try {
+            await deleteFromSupabase(storagePath);
+            console.log('Deleted from Supabase:', storagePath);
+          } catch (supabaseError) {
+            console.warn('Supabase delete failed:', supabaseError);
+            throw supabaseError;
+          }
+        } else {
+          // Delete from localStorage
           const storageKey = type === 'photos' ? 'uploadedPhotos' : 'uploadedVideos';
           const saved = localStorage.getItem(storageKey);
           if (saved) {
             const items = JSON.parse(saved);
-            const updated = items.filter(item => item.id !== storagePath && item.path !== storagePath);
+            const updated = items.filter(item => item.id !== itemId);
             localStorage.setItem(storageKey, JSON.stringify(updated));
           }
         }
@@ -316,11 +321,12 @@ export default function MediaUpload() {
         await loadMedia();
         setTimeout(() => setSuccess(''), 3000);
       } catch (err) {
-        setError('Delete failed. Please try again.');
+        setError(`Delete failed: ${err.message}. Please try again.`);
         console.error('Delete error:', err);
+        setTimeout(() => setError(''), 5000);
       }
     } else {
-      setDeleteConfirm(storagePath);
+      setDeleteConfirm(confirmKey);
       setTimeout(() => setDeleteConfirm(null), 5000);
     }
   };
@@ -671,13 +677,29 @@ export default function MediaUpload() {
                       </button>
                     )}
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (window.confirm('⚠️ Are you sure you want to delete ALL photos? This cannot be undone!')) {
-                          setUploadedMedia(prev => ({ ...prev, photos: [] }));
-                          localStorage.setItem('uploadedPhotos', JSON.stringify([]));
-                          setSelectedItems([]);
-                          setSuccess('✅ All photos deleted successfully!');
-                          setTimeout(() => setSuccess(''), 3000);
+                          try {
+                            // Delete all photos from Supabase
+                            for (const photo of uploadedMedia.photos) {
+                              if (photo.storagePath && !photo.storagePath.startsWith('local-')) {
+                                try {
+                                  await deleteFromSupabase(photo.storagePath);
+                                } catch (err) {
+                                  console.warn('Failed to delete:', photo.storagePath, err);
+                                }
+                              }
+                            }
+                            // Clear localStorage
+                            localStorage.setItem('uploadedPhotos', JSON.stringify([]));
+                            setSelectedItems([]);
+                            await loadMedia();
+                            setSuccess('✅ All photos deleted successfully!');
+                            setTimeout(() => setSuccess(''), 3000);
+                          } catch (err) {
+                            setError('Failed to delete all photos. Please try again.');
+                            console.error('Delete all photos error:', err);
+                          }
                         }
                       }}
                       className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all transform hover:scale-105"
@@ -688,14 +710,29 @@ export default function MediaUpload() {
                       Delete All Photos
                     </button>
                     <button
-                      onClick={() => {
-                        if (window.confirm('⚠️ Are you sure you want to delete ALL user-uploaded videos? This cannot be undone!')) {
-                          const defaultVideos = uploadedMedia.videos.filter(v => v.id <= 5);
-                          setUploadedMedia(prev => ({ ...prev, videos: defaultVideos }));
-                          localStorage.setItem('uploadedVideos', JSON.stringify([]));
-                          setSelectedItems([]);
-                          setSuccess('✅ All user videos deleted successfully!');
-                          setTimeout(() => setSuccess(''), 3000);
+                      onClick={async () => {
+                        if (window.confirm('⚠️ Are you sure you want to delete ALL videos? This cannot be undone!')) {
+                          try {
+                            // Delete all videos from Supabase
+                            for (const video of uploadedMedia.videos) {
+                              if (video.storagePath && !video.storagePath.startsWith('local-')) {
+                                try {
+                                  await deleteFromSupabase(video.storagePath);
+                                } catch (err) {
+                                  console.warn('Failed to delete:', video.storagePath, err);
+                                }
+                              }
+                            }
+                            // Clear localStorage
+                            localStorage.setItem('uploadedVideos', JSON.stringify([]));
+                            setSelectedItems([]);
+                            await loadMedia();
+                            setSuccess('✅ All videos deleted successfully!');
+                            setTimeout(() => setSuccess(''), 3000);
+                          } catch (err) {
+                            setError('Failed to delete all videos. Please try again.');
+                            console.error('Delete all videos error:', err);
+                          }
                         }
                       }}
                       className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-all transform hover:scale-105"
@@ -787,7 +824,7 @@ export default function MediaUpload() {
                           </div>
                           {/* Delete Button */}
                           <button
-                            onClick={() => handleDelete('photos', photo.id)}
+                            onClick={() => handleDelete('photos', photo.id, photo.storagePath)}
                             className={`absolute top-2 right-2 p-3 rounded-xl font-bold transition-all shadow-xl ${
                               deleteConfirm === `photos-${photo.id}`
                                 ? 'bg-red-600 text-white scale-110'
@@ -835,7 +872,7 @@ export default function MediaUpload() {
                         </div>
                       </div>
                       <button
-                        onClick={() => handleDelete('videos', video.id)}
+                        onClick={() => handleDelete('videos', video.id, video.storagePath)}
                         className={`w-full py-2 px-4 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${
                           deleteConfirm === `videos-${video.id}`
                             ? 'bg-red-600 text-white'

@@ -16,7 +16,7 @@ export default function PhotosGallery() {
 
   const loadPhotos = async () => {
     try {
-      // Load from Supabase Storage
+      // Load from Supabase Storage with cache busting
       const { data, error } = await supabase.storage
         .from('media')
         .list('photos', {
@@ -30,29 +30,39 @@ export default function PhotosGallery() {
       for (const item of data || []) {
         if (item.name === '.emptyFolderPlaceholder') continue;
         
+        // Add cache busting timestamp to URL
         const { data: { publicUrl } } = supabase.storage
           .from('media')
           .getPublicUrl(`photos/${item.name}`);
 
+        const urlWithCache = `${publicUrl}?t=${Date.now()}`;
+
         photosList.push({
-          id: item.id || item.name,
+          id: item.name,
           name: item.name,
-          path: publicUrl,
-          title: item.metadata?.title || 'Hospital Photo'
+          path: urlWithCache,
+          title: item.metadata?.title || item.name.replace(/\.[^/.]+$/, '') || 'Hospital Photo',
+          category: 'Medical Procedure'
         });
       }
 
       setPhotos(photosList);
+      console.log('Loaded photos from Supabase:', photosList.length);
     } catch (error) {
       console.error('Error loading photos from Supabase:', error);
       // Fallback to localStorage if Supabase fails
       try {
         const savedPhotos = localStorage.getItem('uploadedPhotos');
         if (savedPhotos) {
-          setPhotos(JSON.parse(savedPhotos));
+          const localPhotos = JSON.parse(savedPhotos);
+          setPhotos(localPhotos);
+          console.log('Loaded photos from localStorage:', localPhotos.length);
+        } else {
+          setPhotos([]);
         }
       } catch (e) {
         console.error('Fallback error:', e);
+        setPhotos([]);
       }
     } finally {
       setLoading(false);
@@ -107,12 +117,26 @@ export default function PhotosGallery() {
             </svg>
             <span>Back to Home</span>
           </Link>
-          <Link href="/" className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold shadow-lg transition-all transform hover:scale-105 text-sm sm:text-base">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span>Exit Gallery</span>
-          </Link>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setLoading(true);
+                loadPhotos();
+              }}
+              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-bold shadow-lg transition-all transform hover:scale-105 text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Refresh</span>
+            </button>
+            <Link href="/" className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold shadow-lg transition-all transform hover:scale-105 text-sm sm:text-base">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Exit Gallery</span>
+            </Link>
+          </div>
         </div>
 
         {/* Photos Grid - Mobile Optimized: 2 columns on mobile, more on larger screens */}

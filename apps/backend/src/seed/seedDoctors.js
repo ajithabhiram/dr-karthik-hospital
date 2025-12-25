@@ -4,13 +4,13 @@ const supabase = require('../db/supabase');
 const sampleDoctors = [
   {
     name: "Dr. Karthik Paidi",
-    qualifications: "MBBS, MS (Orthopaedics), FIAS, FIJR, EASE",
+    qualifications: "MBBS, MS (Orthopaedics), FIAS, FIJR",
     specialty: "Consultant Orthopaedic, Arthroscopic and Replacement Surgeon",
     experience: "12 years overall experience including 9 years as a specialist",
-    description: "Dr. Karthik Paidi is a highly skilled Orthopaedic Surgeon specializing in Joint Replacement and Arthroscopic Surgeries. He was awarded Gold Medal (2016) for the Best Paper Presentation. He has vast experience of Arthroscopic Surgeries including knee Arthroscopy (meniscal & ligament surgeries), Shoulder (Rotator cuff & labral repair). He was awarded his fellowship in Gujarat (AMD) in sports medicine under Dr. Prathmesh Jain who is one of the best Arthroscopy Surgeons in India. He was awarded his Fellowship in Joint replacement (Sunshine) in Hyderabad. Completed Express Arthroplasty Skills Education (EASE) in MS Ramaiah (Bengaluru) Advance Learning Center.",
+    description: "Dr. Karthik Paidi is a highly skilled Orthopaedic Surgeon specializing in Joint Replacement and Arthroscopic Surgeries. He was awarded Gold Medal (2016) for the Best Paper Presentation. He has vast experience of Arthroscopic Surgeries including knee Arthroscopy (meniscal & ligament surgeries), Shoulder (Rotator cuff & labral repair). He was awarded his fellowship in Gujarat (AMD) in sports medicine under Dr. Prathmesh Jain who is one of the best Arthroscopy Surgeons in India. He was awarded his Fellowship in Joint replacement (Sunshine) in Hyderabad.",
     services: "Sports Medicine Fellowship (AMD), Fellowship in Joint Replacement (Sunshine), Expertise in Arthroscopy Surgery - minimally invasive keyhole surgery which gives rehabilitation & return back to normal activity, Knee Arthroscopy (meniscal & ligament surgeries), Shoulder Surgery (Rotator cuff & labral repair), Joint Replacement Surgery",
     languages: "English, Telugu",
-    awards: "Received Gold Medal for the Best Paper Presentation (2016), Fellowship in Sports Medicine (AMD Gujarat), Fellowship in Joint Replacement (Sunshine Hyderabad), EASE Certification (MS Ramaiah Bengaluru)",
+    awards: "Received Gold Medal for the Best Paper Presentation (2016), Fellowship in Sports Medicine (AMD Gujarat), Fellowship in Joint Replacement (Sunshine Hyderabad)",
     phone: "+917386361609",
     email: "karthik@ruthvikhospitals.com",
     photo_url: "/u1.jpeg",

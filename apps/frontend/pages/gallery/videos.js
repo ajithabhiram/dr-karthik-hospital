@@ -9,9 +9,9 @@ export default function VideosGallery() {
   const [loading, setLoading] = useState(true);
   const [videos, setVideos] = useState([
     { num: 1, title: 'Orthopaedic Surgery', category: 'Advanced Procedure', icon: '🏥' },
-    { num: 2, title: 'Joint Replacement', category: 'Surgical Technique', icon: '🦴' },
+    { num: 2, title: 'ACL Surgery', category: 'Surgical Technique', icon: '🦴' },
     { num: 3, title: 'Arthroscopic Surgery', category: 'Minimally Invasive', icon: '⚕️' },
-    { num: 4, title: 'Trauma Management', category: 'Emergency Care', icon: '🚑' },
+    { num: 4, title: 'Joint Replacement Surgery', category: 'Advanced Procedure', icon: '🚑' },
     { num: 5, title: 'Surgical Excellence', category: 'Expert Demonstration', icon: '⭐' }
   ]);
 
@@ -36,15 +36,15 @@ export default function VideosGallery() {
 
   const loadVideos = async () => {
     const defaultVideos = [
-      { num: 1, title: 'Orthopaedic Surgery', category: 'Advanced Procedure', icon: '🏥' },
-      { num: 2, title: 'Joint Replacement', category: 'Surgical Technique', icon: '🦴' },
-      { num: 3, title: 'Arthroscopic Surgery', category: 'Minimally Invasive', icon: '⚕️' },
-      { num: 4, title: 'Trauma Management', category: 'Emergency Care', icon: '🚑' },
-      { num: 5, title: 'Surgical Excellence', category: 'Expert Demonstration', icon: '⭐' }
+      { num: 1, title: 'Orthopaedic Surgery', category: 'Advanced Procedure', icon: '🏥', path: '/videos/v1.mp4' },
+      { num: 2, title: 'ACL Surgery', category: 'Surgical Technique', icon: '🦴', path: '/videos/v2.mp4' },
+      { num: 3, title: 'Arthroscopic Surgery', category: 'Minimally Invasive', icon: '⚕️', path: '/videos/v3.mp4' },
+      { num: 4, title: 'Joint Replacement Surgery', category: 'Advanced Procedure', icon: '🚑', path: '/videos/v4.mp4' },
+      { num: 5, title: 'Surgical Excellence', category: 'Expert Demonstration', icon: '⭐', path: '/videos/v5.mp4' }
     ];
 
     try {
-      // Load from Supabase Storage
+      // Load from Supabase Storage with cache busting
       const { data, error } = await supabase.storage
         .from('media')
         .list('videos', {
@@ -58,21 +58,27 @@ export default function VideosGallery() {
       for (const item of data || []) {
         if (item.name === '.emptyFolderPlaceholder') continue;
         
+        // Add cache busting timestamp to URL
         const { data: { publicUrl } } = supabase.storage
           .from('media')
           .getPublicUrl(`videos/${item.name}`);
 
+        const urlWithCache = `${publicUrl}?t=${Date.now()}`;
+
         supabaseVideos.push({
-          num: Date.now() + Math.random(),
+          num: `supabase-${item.name}`,
           title: item.metadata?.title || item.name.replace(/\.[^/.]+$/, ''),
           category: 'Uploaded Video',
           icon: '📹',
-          path: publicUrl
+          path: urlWithCache,
+          isSupabase: true
         });
       }
 
       // Combine default videos with Supabase videos
-      setVideos([...defaultVideos, ...supabaseVideos]);
+      const allVideos = [...defaultVideos, ...supabaseVideos];
+      setVideos(allVideos);
+      console.log('Loaded videos:', { default: defaultVideos.length, supabase: supabaseVideos.length, total: allVideos.length });
     } catch (error) {
       console.error('Error loading videos from Supabase:', error);
       // Fallback to localStorage
@@ -81,17 +87,20 @@ export default function VideosGallery() {
         if (savedVideos) {
           const userVideos = JSON.parse(savedVideos);
           const formattedUserVideos = userVideos.map(v => ({
-            num: v.id,
+            num: `local-${v.id}`,
             title: v.title,
             category: v.category || 'User Upload',
             icon: '📹',
-            path: v.path
+            path: v.path,
+            isLocal: true
           }));
           setVideos([...defaultVideos, ...formattedUserVideos]);
+          console.log('Loaded videos from localStorage:', formattedUserVideos.length);
         } else {
           setVideos(defaultVideos);
         }
       } catch (e) {
+        console.error('Fallback error:', e);
         setVideos(defaultVideos);
       }
     } finally {
@@ -152,12 +161,26 @@ export default function VideosGallery() {
             </svg>
             <span>Back to Home</span>
           </Link>
-          <Link href="/" className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold shadow-lg transition-all transform hover:scale-105 text-sm sm:text-base">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span>Exit Gallery</span>
-          </Link>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setLoading(true);
+                loadVideos();
+              }}
+              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-bold shadow-lg transition-all transform hover:scale-105 text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Refresh</span>
+            </button>
+            <Link href="/" className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-bold shadow-lg transition-all transform hover:scale-105 text-sm sm:text-base">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Exit Gallery</span>
+            </Link>
+          </div>
         </div>
 
         {/* Videos Grid - Mobile Optimized: 1 column on mobile for better video viewing */}

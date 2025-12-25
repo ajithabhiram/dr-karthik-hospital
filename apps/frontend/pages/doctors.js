@@ -120,10 +120,7 @@ export default function Doctors() {
                                   <span className="text-green-600 mr-2 mt-1">•</span>
                                   <span>FIJR - Fellowship in Joint Replacement (Sunshine, Hyderabad)</span>
                                 </li>
-                                <li className="flex items-start">
-                                  <span className="text-green-600 mr-2 mt-1">•</span>
-                                  <span>EASE - Express Arthroplasty Skills Education (MS Ramaiah, Bengaluru)</span>
-                                </li>
+
                               </ul>
                             </div>
 
