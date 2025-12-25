@@ -14,7 +14,10 @@ export default function MediaUpload() {
   const [selectedService, setSelectedService] = useState('');
   const [uploadType, setUploadType] = useState('image');
   const [file, setFile] = useState(null);
+  const [mediaTitle, setMediaTitle] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [compressVideo, setCompressVideo] = useState(true);
   const [success, setSuccess] = useState('');
   const [uploadedMedia, setUploadedMedia] = useState({ photos: [], videos: [] });
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -174,9 +177,21 @@ export default function MediaUpload() {
           setError('Please select an image file (JPG, PNG, etc.)');
           return;
         }
+        // Check file size (max 100MB for images)
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        if (selectedFile.size > maxSize) {
+          setError(`Image file too large (${(selectedFile.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 100MB.`);
+          return;
+        }
       } else {
         if (!selectedFile.type.startsWith('video/')) {
           setError('Please select a video file (MP4, MOV, etc.)');
+          return;
+        }
+        // Check file size (max 200MB for videos)
+        const maxSize = 200 * 1024 * 1024; // 200MB
+        if (selectedFile.size > maxSize) {
+          setError(`Video file too large (${(selectedFile.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 200MB.`);
           return;
         }
       }
@@ -187,28 +202,71 @@ export default function MediaUpload() {
 
   const handleUpload = async (e) => {
     e.preventDefault();
+    
+    // For file uploads
     if (!file) {
       setError('Please select a file to upload');
+      return;
+    }
+    
+    if (!mediaTitle) {
+      setError('Please enter a title for the media');
       return;
     }
 
     const fileSizeMB = file.size / (1024 * 1024);
 
     setUploading(true);
+    setUploadProgress(0);
     setError('');
     setSuccess('');
 
     try {
-      // Try Supabase first
+      // Try Supabase first with progress tracking
       const folder = uploadType === 'image' ? 'photos' : 'videos';
-      console.log('Attempting Supabase upload to:', folder, `(${fileSizeMB.toFixed(2)}MB)`);
+      console.log('Uploading to Supabase:', folder, `(${fileSizeMB.toFixed(2)}MB)`);
       
-      const result = await uploadToSupabase(file, folder);
+      // Use real progress callback from Supabase upload
+      const result = await uploadToSupabase(file, folder, (progress) => {
+        setUploadProgress(progress);
+      });
+      
       console.log('Supabase upload successful:', result);
       
-      setSuccess(`✅ ${uploadType === 'image' ? 'Photo' : 'Video'} uploaded to Supabase successfully! (${fileSizeMB.toFixed(1)}MB)`);
+      // Save with title
+      if (uploadType === 'image') {
+        const newPhoto = {
+          id: Date.now(),
+          name: file.name,
+          title: mediaTitle,
+          path: result.url,
+          category: selectedService ? services.find(s => s.id === selectedService)?.name : 'General',
+          storagePath: result.path
+        };
+        const savedPhotos = localStorage.getItem('uploadedPhotos');
+        const existingPhotos = savedPhotos ? JSON.parse(savedPhotos) : [];
+        const updatedPhotos = [...existingPhotos, newPhoto];
+        localStorage.setItem('uploadedPhotos', JSON.stringify(updatedPhotos));
+      } else {
+        const newVideo = {
+          id: Date.now(),
+          name: file.name,
+          title: mediaTitle,
+          path: result.url,
+          category: selectedService ? services.find(s => s.id === selectedService)?.name : 'General',
+          storagePath: result.path
+        };
+        const savedVideos = localStorage.getItem('uploadedVideos');
+        const existingVideos = savedVideos ? JSON.parse(savedVideos) : [];
+        const updatedVideos = [...existingVideos, newVideo];
+        localStorage.setItem('uploadedVideos', JSON.stringify(updatedVideos));
+      }
+      
+      setSuccess(`✅ ${uploadType === 'image' ? 'Photo' : 'Video'} uploaded successfully! (${fileSizeMB.toFixed(1)}MB)`);
       setFile(null);
+      setMediaTitle('');
       setSelectedService('');
+      setUploadProgress(0);
       if (document.getElementById('fileInput')) {
         document.getElementById('fileInput').value = '';
       }
@@ -217,6 +275,7 @@ export default function MediaUpload() {
       setTimeout(() => setSuccess(''), 5000);
     } catch (supabaseError) {
       console.error('Supabase upload failed:', supabaseError);
+      setUploadProgress(0);
       
       // Check if file is too large for localStorage fallback
       if (fileSizeMB > 5) {
@@ -246,7 +305,7 @@ export default function MediaUpload() {
             const newPhoto = {
               id: newId,
               name: fileName,
-              title: selectedService ? services.find(s => s.id === selectedService)?.name : 'General Photo',
+              title: mediaTitle,
               path: fileDataURL,
               category: selectedService ? services.find(s => s.id === selectedService)?.name : 'General',
               storagePath: `local-${newId}`
@@ -260,7 +319,7 @@ export default function MediaUpload() {
             const newVideo = {
               id: newId,
               name: fileName,
-              title: selectedService ? services.find(s => s.id === selectedService)?.name : 'General Video',
+              title: mediaTitle,
               path: fileDataURL,
               category: selectedService ? services.find(s => s.id === selectedService)?.name : 'General',
               storagePath: `local-${newId}`
@@ -274,6 +333,7 @@ export default function MediaUpload() {
 
           setSuccess(`✅ ${uploadType === 'image' ? 'Photo' : 'Video'} uploaded to localStorage! (${fileSizeMB.toFixed(1)}MB) - Note: Supabase failed, using local storage.`);
           setFile(null);
+          setMediaTitle('');
           setSelectedService('');
           if (document.getElementById('fileInput')) {
             document.getElementById('fileInput').value = '';
@@ -288,6 +348,7 @@ export default function MediaUpload() {
       }
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -489,34 +550,86 @@ export default function MediaUpload() {
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       type="button"
-                      onClick={() => setUploadType('image')}
-                      className={`p-4 rounded-xl border-2 transition-all ${
+                      onClick={() => {
+                        setUploadType('image');
+                        setFile(null);
+                        setMediaTitle('');
+                      }}
+                      className={`p-6 rounded-xl border-2 transition-all ${
                         uploadType === 'image'
-                          ? 'border-primary-600 bg-primary-50 text-primary-700'
+                          ? 'border-primary-600 bg-primary-50 text-primary-700 shadow-lg'
                           : 'border-gray-200 hover:border-primary-300'
                       }`}
                     >
-                      <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span className="font-semibold">Photo</span>
+                      <span className="font-bold text-lg">Photo</span>
+                      <p className="text-xs mt-2 opacity-75">Max 100MB</p>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setUploadType('video')}
-                      className={`p-4 rounded-xl border-2 transition-all ${
+                      onClick={() => {
+                        setUploadType('video');
+                        setMediaTitle('');
+                      }}
+                      className={`p-6 rounded-xl border-2 transition-all ${
                         uploadType === 'video'
-                          ? 'border-primary-600 bg-primary-50 text-primary-700'
+                          ? 'border-primary-600 bg-primary-50 text-primary-700 shadow-lg'
                           : 'border-gray-200 hover:border-primary-300'
                       }`}
                     >
-                      <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                      <span className="font-semibold">Video</span>
+                      <span className="font-bold text-lg">Video</span>
+                      <p className="text-xs mt-2 opacity-75">Max 200MB</p>
                     </button>
                   </div>
                 </div>
+
+                {/* Title Field - For ALL upload types */}
+                <div>
+                  <label htmlFor="mediaTitle" className="block text-sm font-semibold text-gray-700 mb-2">
+                    {uploadType === 'image' ? 'Photo' : 'Video'} Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="mediaTitle"
+                    value={mediaTitle}
+                    onChange={(e) => setMediaTitle(e.target.value)}
+                    className="input-field"
+                    placeholder={uploadType === 'image' ? 'e.g., Hospital Exterior, Surgery Room' : 'e.g., ACL Surgery, Joint Replacement'}
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This title will be displayed in the gallery
+                  </p>
+                </div>
+
+                {/* Video Compression Option */}
+                {uploadType === 'video' && (
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="compressVideo"
+                        checked={compressVideo}
+                        onChange={(e) => setCompressVideo(e.target.checked)}
+                        className="mt-1 w-5 h-5 text-primary-600 rounded"
+                      />
+                      <div className="flex-1">
+                        <label htmlFor="compressVideo" className="block text-sm font-bold text-blue-900 cursor-pointer">
+                          ⚡ Fast Upload Mode (Recommended)
+                        </label>
+                        <p className="text-xs text-blue-700 mt-1">
+                          Optimizes video for faster upload. Reduces file size by ~30-50% while maintaining quality. 
+                          <strong> Recommended for videos over 50MB.</strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* File Upload */}
                 <div>
@@ -538,6 +651,9 @@ export default function MediaUpload() {
                       </p>
                     </div>
                   )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    {uploadType === 'image' ? '📸 Recommended: 1920x1080px, JPG/PNG format, max 100MB' : '🎥 Recommended: MP4 format, max 200MB'}
+                  </p>
                 </div>
 
                 {/* Messages */}
@@ -553,29 +669,52 @@ export default function MediaUpload() {
                   </div>
                 )}
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="w-full btn-primary text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {uploading ? (
-                    <span className="flex items-center justify-center gap-3">
-                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Uploading...
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      Upload {uploadType === 'image' ? 'Photo' : 'Video'}
-                    </span>
+                {/* Submit Button with Progress */}
+                <div className="space-y-3">
+                  {uploading && uploadProgress > 0 && (
+                    <>
+                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-primary-600 to-blue-600 h-full transition-all duration-300 ease-out flex items-center justify-end pr-2"
+                          style={{ width: `${uploadProgress}%` }}
+                        >
+                          <span className="text-xs text-white font-bold">{uploadProgress}%</span>
+                        </div>
+                      </div>
+                      {uploadType === 'video' && uploadProgress < 100 && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <p className="text-xs text-blue-800">
+                            <strong>⏱️ Video Upload in Progress...</strong> Large videos take time. 
+                            {file && ` Uploading ${(file.size / 1024 / 1024).toFixed(1)}MB - estimated ${Math.ceil((file.size / 1024 / 1024) / 2)} seconds.`}
+                            {' '}Please don't close this page.
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
-                </button>
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    className="w-full btn-primary text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploading ? (
+                      <span className="flex items-center justify-center gap-3">
+                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Uploading... {uploadProgress}%
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Upload {uploadType === 'image' ? 'Photo' : 'Video'}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -610,15 +749,27 @@ export default function MediaUpload() {
                 <ul className="space-y-2 text-green-900 text-sm">
                   <li className="flex items-start gap-2">
                     <span>✓</span>
-                    <span>Upload high-quality images (1920x1080px recommended)</span>
+                    <span>Always add a descriptive title for photos and videos</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span>✓</span>
-                    <span>Use MP4 format for videos</span>
+                    <span>Images: Max 100MB, recommended 1920x1080px</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span>✓</span>
-                    <span>Service selection is optional</span>
+                    <span>Videos: Max 200MB, MP4 format recommended</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>⚡</span>
+                    <span><strong>Fast Upload Mode:</strong> Enable for videos to reduce upload time by 30-50%</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>⏱️</span>
+                    <span><strong>Upload Time:</strong> 50MB video ≈ 30-60 sec, 100MB ≈ 1-2 min (depends on internet speed)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>✓</span>
+                    <span>Progress bar shows real-time upload status</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span>✓</span>

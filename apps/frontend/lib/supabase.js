@@ -5,41 +5,93 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOi
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Helper function to upload file to Supabase Storage
-export async function uploadToSupabase(file, folder = 'general') {
+// Helper function to upload file to Supabase Storage with progress tracking
+export async function uploadToSupabase(file, folder = 'general', onProgress = null) {
   try {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
 
-    console.log('Uploading to:', filePath);
+    console.log('Uploading to:', filePath, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
 
-    const { data, error } = await supabase.storage
-      .from('media')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+    // For large files, use chunked upload simulation with progress
+    if (file.size > 5 * 1024 * 1024 && onProgress) {
+      // Simulate chunked upload progress
+      const chunkSize = 1024 * 1024; // 1MB chunks
+      const totalChunks = Math.ceil(file.size / chunkSize);
+      let uploadedChunks = 0;
 
-    if (error) {
-      console.error('Supabase upload error:', error);
-      throw error;
+      // Start actual upload
+      const uploadPromise = supabase.storage
+        .from('media')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      // Simulate progress while uploading
+      const progressInterval = setInterval(() => {
+        uploadedChunks++;
+        const progress = Math.min(Math.floor((uploadedChunks / totalChunks) * 95), 95);
+        if (onProgress) onProgress(progress);
+        if (uploadedChunks >= totalChunks) {
+          clearInterval(progressInterval);
+        }
+      }, 300); // Update every 300ms for smoother progress
+
+      const { data, error } = await uploadPromise;
+      clearInterval(progressInterval);
+
+      if (error) {
+        console.error('Supabase upload error:', error);
+        throw error;
+      }
+
+      if (onProgress) onProgress(100);
+      console.log('Upload successful:', data);
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      console.log('Public URL:', publicUrl);
+
+      return {
+        path: filePath,
+        url: publicUrl,
+        name: file.name
+      };
+    } else {
+      // Small files - direct upload
+      const { data, error } = await supabase.storage
+        .from('media')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Supabase upload error:', error);
+        throw error;
+      }
+
+      if (onProgress) onProgress(100);
+      console.log('Upload successful:', data);
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath);
+
+      console.log('Public URL:', publicUrl);
+
+      return {
+        path: filePath,
+        url: publicUrl,
+        name: file.name
+      };
     }
-
-    console.log('Upload successful:', data);
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('media')
-      .getPublicUrl(filePath);
-
-    console.log('Public URL:', publicUrl);
-
-    return {
-      path: filePath,
-      url: publicUrl,
-      name: file.name
-    };
   } catch (error) {
     console.error('Upload error details:', error);
     throw error;
