@@ -20,18 +20,53 @@ export default function Doctors() {
         .select('*')
         .order('name');
 
-      if (supabaseError) throw supabaseError;
+      if (supabaseError) {
+        console.warn('Supabase error, using fallback data:', supabaseError);
+        // Use fallback data if Supabase fails
+        setDoctors(getFallbackDoctors());
+        setLoading(false);
+        return;
+      }
+      
+      // If no data from Supabase, use fallback
+      if (!data || data.length === 0) {
+        console.log('No data in Supabase, using fallback');
+        setDoctors(getFallbackDoctors());
+        setLoading(false);
+        return;
+      }
       
       // Filter to show only Dr. Karthik
       const karthikOnly = data.filter(doc => doc.name.includes('Karthik'));
       
-      setDoctors(karthikOnly);
+      if (karthikOnly.length === 0) {
+        // If no Karthik found, use fallback
+        setDoctors(getFallbackDoctors());
+      } else {
+        setDoctors(karthikOnly);
+      }
     } catch (err) {
       console.error('Error fetching doctors:', err);
-      setError('Failed to load doctors');
+      // Use fallback data instead of showing error
+      setDoctors(getFallbackDoctors());
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fallback doctor data
+  const getFallbackDoctors = () => {
+    return [{
+      _id: '1',
+      name: 'Dr. Karthik Paidi',
+      specialty: 'Orthopaedic Surgeon',
+      qualifications: 'MBBS, MS (Orthopaedics), FIAS, FIJR',
+      experience: '12 years overall, 9 years as specialist',
+      image: '/photos/Dr. Karthik Paidi.png',
+      phone: '+91 73863 61609',
+      email: 'ruthvikhospitals@gmail.com',
+      description: 'Expert in joint replacement surgery and orthopaedic trauma care with extensive training in arthroscopic procedures.'
+    }];
   };
 
   return (
@@ -66,14 +101,7 @@ export default function Doctors() {
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
-            <p className="font-semibold">Error loading doctors</p>
-            <p>{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && (
+        {!loading && (
           <>
             {/* Doctors Grid with Detailed Biographies */}
             <div className="space-y-16 max-w-6xl mx-auto">
